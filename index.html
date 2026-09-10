@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Irrigation</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <h1>Smart Irrigation</h1>
+            <p class="subtitle">Offline Irrigation Control</p>
+        </div>
+        <div class="connection-status">
+            <span class="status-dot connected"></span> Connected
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- System Status Card -->
+        <section class="card system-status">
+            <h2>System Status</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="label">Operating Mode</span>
+                    <span class="value" id="mode-display">AUTO</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">LoRa Status</span>
+                    <span class="value success" id="lora-display">Connected</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Last Updated</span>
+                    <span class="value" id="last-updated">--:--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mode Control -->
+        <section class="mode-controls">
+            <button id="btn-mode-auto" class="mode-btn active">AUTO</button>
+            <button id="btn-mode-manual" class="mode-btn">MANUAL</button>
+        </section>
+
+        <!-- Zone 1 Card -->
+        <section class="card zone-card">
+            <div class="card-header">
+                <h2>Zone 1</h2>
+                <span class="valve-status" id="valve1-status">Valve: OFF</span>
+            </div>
+            <div class="moisture-container">
+                <div class="moisture-header">
+                    <span>Soil Moisture</span>
+                    <span id="zone1-moisture-val">32%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="zone1-progress" style="width: 32%;"></div>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="btn-z1-on" class="action-btn btn-on">ON</button>
+                <button id="btn-z1-off" class="action-btn btn-off">OFF</button>
+            </div>
+        </section>
+
+        <!-- Zone 2 Card -->
+        <section class="card zone-card">
+            <div class="card-header">
+                <h2>Zone 2</h2>
+                <span class="valve-status" id="valve2-status">Valve: OFF</span>
+            </div>
+            <div class="moisture-container">
+                <div class="moisture-header">
+                    <span>Soil Moisture</span>
+                    <span id="zone2-moisture-val">58%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="zone2-progress" style="width: 58%;"></div>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="btn-z2-on" class="action-btn btn-on">ON</button>
+                <button id="btn-z2-off" class="action-btn btn-off">OFF</button>
+            </div>
+        </section>
+
+        <!-- Water System Card -->
+        <section class="card water-system">
+            <h2>Water System</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="label">Water Level</span>
+                    <span class="value success" id="water-level">OK</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Flow Rate</span>
+                    <span class="value" id="flow-rate">0.0 L/min</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Pump</span>
+                    <span class="value" id="pump-status">OFF</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Emergency Control -->
+        <section class="emergency-control">
+            <button id="btn-all-off" class="emergency-btn">ALL OFF</button>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
