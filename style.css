@@ -49,6 +49,19 @@ body {
     opacity: 0.8;
 }
 
+.sim-badge {
+    background-color: #ecc94b;
+    color: #744210;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    display: inline-block;
+}
+
 .connection-status {
     display: flex;
     align-items: center;

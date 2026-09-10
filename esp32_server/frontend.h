@@ -12,7 +12,7 @@ const char* index_html = R"rawliteral(
 <body>
     <header class="app-header">
         <div class="header-content">
-            <h1>Smart Irrigation</h1>
+            <h1>Smart Irrigation <span class="sim-badge">SIMULATION MODE</span></h1>
             <p class="subtitle">Offline Irrigation Control</p>
         </div>
         <div class="connection-status">
@@ -169,6 +169,19 @@ body {
 .header-content .subtitle {
     font-size: 0.875rem;
     opacity: 0.8;
+}
+
+.sim-badge {
+    background-color: #ecc94b;
+    color: #744210;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    display: inline-block;
 }
 
 .connection-status {
@@ -414,7 +427,7 @@ body {
 )rawliteral";
 
 const char* script_js = R"rawliteral(
-// Local State Variables
+// Local State Variables (Real API State)
 let state = {
     zone1Moisture: 32,
     zone2Moisture: 58,
@@ -425,6 +438,15 @@ let state = {
     valve2: false,
     mode: "AUTO",
     lora: false
+};
+
+// Simulation State (Software Simulation)
+let simState = {
+    active: true,
+    zone1Moisture: 32.0,
+    zone2Moisture: 58.0,
+    waterLevelPercent: 100.0,
+    flowRate: 0.0
 };
 
 // DOM Elements Cache
@@ -511,13 +533,12 @@ function setConnectionStatus(connected) {
 }
 
 // API Functions
-async function fetchStatus() {
+async function fetchRealStatus() {
     try {
         const response = await fetch('/api/status');
         if (response.ok) {
             const data = await response.json();
-            state = { ...state, ...data }; // Merge new data
-            updateUI();
+            state = { ...state, ...data }; // Merge new data from ESP32
             setConnectionStatus(true);
         } else {
             setConnectionStatus(false);
@@ -536,11 +557,77 @@ async function sendCommand(url, payload) {
             body: JSON.stringify(payload)
         });
         if (response.ok) {
-            // Immediately fetch new status to reflect changes
-            fetchStatus();
+            // Immediately fetch new status and process physics
+            await fetchRealStatus();
+            runSimulation();
+            updateUI();
         }
     } catch (error) {
         console.error(`Error sending command to ${url}:`, error);
+    }
+}
+
+function runSimulation() {
+    if (!simState.active) return;
+    
+    // 1. Pump & Flow Simulation
+    state.pump = state.valve1 || state.valve2;
+    
+    if (state.pump) {
+        // Random flow between 2.5 and 4.0
+        simState.flowRate = 2.5 + Math.random() * 1.5;
+    } else {
+        simState.flowRate = 0.0;
+    }
+    state.flow = simState.flowRate;
+    
+    // 2. Water Level Simulation
+    if (state.pump) {
+        simState.waterLevelPercent -= 0.2; // Decrease slowly
+        if (simState.waterLevelPercent < 0) simState.waterLevelPercent = 0;
+    }
+    if (simState.waterLevelPercent > 20) {
+        state.waterLevel = "OK";
+    } else {
+        state.waterLevel = "LOW";
+    }
+    
+    // 3. Soil Moisture Simulation
+    // Zone 1
+    if (state.valve1) {
+        simState.zone1Moisture += 2.0;
+        if (simState.zone1Moisture > 100) simState.zone1Moisture = 100;
+    } else {
+        simState.zone1Moisture -= 0.5;
+        if (simState.zone1Moisture < 0) simState.zone1Moisture = 0;
+    }
+    
+    // Zone 2
+    if (state.valve2) {
+        simState.zone2Moisture += 2.0;
+        if (simState.zone2Moisture > 100) simState.zone2Moisture = 100;
+    } else {
+        simState.zone2Moisture -= 0.5;
+        if (simState.zone2Moisture < 0) simState.zone2Moisture = 0;
+    }
+    
+    // Override API sensor data with simulated physical data
+    state.zone1Moisture = Math.round(simState.zone1Moisture);
+    state.zone2Moisture = Math.round(simState.zone2Moisture);
+    
+    // 4. AUTO Mode Simulation Logic
+    if (state.mode === 'AUTO') {
+        if (simState.zone1Moisture < 30 && !state.valve1) {
+            sendCommand('/api/zone1', { state: "ON" });
+        } else if (simState.zone1Moisture > 60 && state.valve1) {
+            sendCommand('/api/zone1', { state: "OFF" });
+        }
+        
+        if (simState.zone2Moisture < 30 && !state.valve2) {
+            sendCommand('/api/zone2', { state: "ON" });
+        } else if (simState.zone2Moisture > 60 && state.valve2) {
+            sendCommand('/api/zone2', { state: "OFF" });
+        }
     }
 }
 
@@ -556,10 +643,18 @@ btnZ2Off.addEventListener('click', () => sendCommand('/api/zone2', { state: "OFF
 
 btnAllOff.addEventListener('click', () => sendCommand('/api/alloff', {}));
 
-// Initial Render and Polling
-updateUI();
-fetchStatus(); // Fetch right away
-setInterval(fetchStatus, 2000); // Poll every 2 seconds
+// Initial Render and Polling setup
+fetchRealStatus().then(() => {
+    runSimulation();
+    updateUI();
+});
+
+// Simulation Loop (runs every 1 second)
+setInterval(async () => {
+    await fetchRealStatus(); // Get actual valve/mode states from ESP32 API
+    runSimulation();         // Process simulated sensor physics
+    updateUI();              // Refresh the dashboard
+}, 1000);
 
 )rawliteral";
 
