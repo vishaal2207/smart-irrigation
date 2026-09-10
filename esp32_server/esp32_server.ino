@@ -18,7 +18,7 @@ bool pump = false;
 bool valve1 = false;
 bool valve2 = false;
 String mode = "AUTO";
-bool lora = false;
+bool lora = true;
 
 // Function to send CORS headers (good practice for APIs)
 void sendCORSHeaders() {
